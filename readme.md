@@ -30,7 +30,7 @@ We are using the following steps to develop the project:
 ## Research
 We found some similar project on github that utilize the same libraries. We are using the following projects as reference:
 1. [Face Recognition](https://github.com/ageitgey/face_recognition)
-2. [Face Attendance System](htps://github.com/computervisioneng/face-atendance-system)
+2. [Face Attendance System](https://github.com/computervisioneng/face-atendance-system)
 3. [Face_Recognition_Project](https://github.com/Chando0185/face_recognition_project)
 
 ## Planning
