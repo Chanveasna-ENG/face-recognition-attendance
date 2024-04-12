@@ -32,6 +32,6 @@ def add_student_info(student_id, student_name):
         for row in reader:
             if row['ID'] == student_id:
                 print("Student ID already exists.")
-                return
+                return 
         writer.writerow(data) 
 
