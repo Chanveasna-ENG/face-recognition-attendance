@@ -1,0 +1,52 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Streaming</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="box">
+    <div class="column column-1">
+        <img class=video src="{{ url_for('video_feed') }}" />
+    </div>
+
+    <div class="column column-2">
+        <div id="face-container">
+            <!-- Faces will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        function updateImageAndName() {
+            fetch("{{ url_for('recognized_face') }}")
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data); // Log the data for debugging
+                    window.requestAnimationFrame(() => {
+                        var container = document.getElementById('face-container');
+                        container.innerHTML = ''; // Clear the container
+
+                        data.forEach(face => {
+                            var img = document.createElement('img');
+                            var name = document.createElement('p');
+                            var timestamp = document.createElement('p');  // Add this line
+
+                            var url = "data:image/jpeg;base64," + face.image;
+                            img.src = url;
+                            name.textContent = face.name;
+                            timestamp.textContent = face.timestamp;  // Add this line
+
+                            container.appendChild(img);
+                            container.appendChild(name);
+                            container.appendChild(timestamp);  // Add this line
+                        });
+                    });
+                })
+                .catch(error => console.error('Error:', error)); // Log any errors
+        }
+
+        setInterval(updateImageAndName, 1000); // Update the image and name every 1 seconds
+    </script>
+    
+</body>
+</html>
