@@ -77,6 +77,7 @@ def gen():
     while True:
         # Grab every single frame of video
         ret, frame = video_capture.read()
+        frame = cv2.flip(frame, 1)
 
         # Only process every 30th frame of video to save time
         # user must stay still for a while for it to capture
@@ -110,14 +111,14 @@ def gen():
             cv2.rectangle(img=frame, 
                         pt1=(left, top), 
                         pt2=(right, bottom), 
-                        color=(0, 0, 255), 
+                        color=(95, 95, 255), 
                         thickness=2)
 
             # Draw a label with a name below the face
             cv2.rectangle(img=frame, 
                         pt1=(left, bottom - 35), 
                         pt2=(right, bottom), 
-                        color=(0, 0, 255), 
+                        color=(95, 95, 255), 
                         thickness=cv2.FILLED)
 
             cv2.putText(img=frame, 
@@ -127,13 +128,13 @@ def gen():
                         fontScale=1.0, 
                         color=(255, 255, 255), 
                         thickness=1)
-
+            
         # Displaying counter
         cv2.putText(img=frame, 
-                    text=str(frame_counter), 
-                    org=(20, 20), 
+                    text="Frame: " + str(frame_counter), 
+                    org=(10, 25), 
                     fontFace=cv2.FONT_HERSHEY_DUPLEX, 
-                    fontScale=1.0, 
+                    fontScale=0.5, 
                     color=(255, 255, 255), 
                     thickness=1)
 

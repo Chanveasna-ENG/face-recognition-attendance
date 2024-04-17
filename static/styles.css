@@ -2,14 +2,18 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: Arial, sans-serif;
+    font-family:sans-serif;
     background-color: #f0f0f0;
 }
 
 .video {
     width: 75%;
     height: auto;
-    border: 3px solid #ff00ff;
+    border: 3px solid #FFFFFF;
+    border-radius: 15px;
+    /* Turn this on to flip video */
+    /* -webkit-transform: scaleX(-1);
+    transform: scaleX(-1); */
 }
 
 .box {
@@ -24,32 +28,31 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    border: 3px solid #00ff;
     height: 100%;
     width: 100%;
 }
 
 .column-1 {
     flex: 8;
-    border: 3px solid #00ff00;
 }
 
 .column-2 {
     display: flex;
     flex: 2;
-    border: 3px solid #00ffff;
+    border-radius: 5px;
     text-align: center;
 }
 
 .column-2 img {
     width: 200px;
     height: 250px;
-    border: 3px solid #ff0000;
+    border: 3px solid #FFFFFF;
+    border-radius: 15px;
     margin: auto;
     object-fit: cover;
 }
 
 .column-2 p {
     font-size: 1.5em;
-    color: #ff0000;
+    color: #444444;
 }
