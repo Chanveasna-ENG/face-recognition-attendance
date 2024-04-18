@@ -1,37 +1,31 @@
-import csv
 import os
+import csv
 from datetime import datetime
 
-# Function to handle writing attendance to CSV
-def write_attendance_to_csv(student_id, student_name):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open('attendance.csv', 'a', newline='') as csvfile:
-        fieldnames = ['TimeStamp', 'StudentID', 'StudentName']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        if os.stat('attendance.csv').st_size == 0:
-            writer.writeheader()  # Write header if file is empty
-        writer.writerow({'TimeStamp': timestamp, 'StudentID': student_id, 'StudentName': student_name})
+def create_or_check_attendance_file():
+    # Define the folder name
+    folder_name = "attendance"
+    
+    # Check if the 'attendance' folder exists, if not create it
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+        print(f"Folder '{folder_name}' created.")
 
-# Function to read student names from CSV based on ID
-def lookup_student_name(student_id):
-    with open('student_info.csv', 'r') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if row['ID'] == student_id:
-                return row['Name']
-    return "Unknown"
+    # Get the current date
+    current_date = datetime.now().strftime("%d-%m")
+    file_name = f"{current_date}.csv"
+    
+    # Check if the file exists in the 'attendance' folder
+    file_path = os.path.join(folder_name, file_name)
+    if os.path.exists(file_path):
+        print(f"The file '{file_name}' already exists in the '{folder_name}' folder.")
+    else:
+        # Create the CSV file with headers
+        with open(file_path, 'w', newline='') as csvfile:
+            fieldnames = ['Student ID', 'Name', 'Check-in Time', 'Check-out Time']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+        print(f"New file '{file_name}' created in the '{folder_name}' folder.")
 
-# Function to add or update student info in the CSV
-def add_student_info(student_id, student_name):
-    data = {'ID': student_id, 'Name': student_name}
-    with open('student_info.csv', 'a+', newline='') as csvfile:
-        fieldnames = ['ID', 'Name']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        csvfile.seek(0)
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            if row['ID'] == student_id:
-                print("Student ID already exists.")
-                return 
-        writer.writerow(data) 
-
+# Call the function to create or check the attendance file
+create_or_check_attendance_file()
