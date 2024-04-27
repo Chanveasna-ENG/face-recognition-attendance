@@ -3,10 +3,17 @@ import csv
 from datetime import datetime, timedelta
 
 
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
 # Define the folder name
 FOLDER_NAME = "attendance"
 file_name = f"{datetime.now().strftime('%d-%m')}.csv"
-file_path = os.path.join(FOLDER_NAME, file_name)
+
+file_path = os.path.join(script_dir, FOLDER_NAME, file_name)
+
+
+CHECK_IN_DELAY = 30 # second
+CHECK_OUT_DELAY = 30 # second
 
 
 def write_to_csv(rows=None, row=None, write_header=False):
@@ -42,31 +49,80 @@ def mark_attendance(name, student_id):
         reader = csv.DictReader(csvfile)
         rows = list(reader)
 
-    checked_out = False
-    already_checked_in = False
     current_time = datetime.now()
     current_time_str = current_time.strftime("%H:%M:%S")
 
-    # Iterate over the rows
-    for row in rows:
+    can_check_in = False
+    can_check_out = False
+    has_records = False
+
+    for row in reversed(rows):
         if row['Name'] != name:
             continue
 
-        already_checked_in = True
+        has_records = True
 
-        if row['Check-out Time'] != '':
-            continue
+        if row['Check-out Time'] == '':
+            check_in_time = datetime.strptime(row['Check-in Time'], "%H:%M:%S")
+            check_in_time = check_in_time.replace(year=datetime.now().year, month=datetime.now().month, day=datetime.now().day)
+            
+            if current_time - check_in_time >= timedelta(seconds=CHECK_OUT_DELAY): # default 30 sec
+                can_check_out = True
+                row['Check-out Time'] = current_time_str
+            break
 
-        check_in_time = datetime.strptime(row['Check-in Time'], "%H:%M:%S")
-        check_in_time = check_in_time.replace(year=datetime.now().year, month=datetime.now().month, day=datetime.now().day)
-        
-        if current_time - check_in_time >= timedelta(hours=1):
-            row['Check-out Time'] = current_time_str
-            checked_out = True
-        
+        if row['Check-in Time'] != '' and row['Check-out Time'] != '':
+            check_out_time = datetime.strptime(row['Check-out Time'], "%H:%M:%S")
+            check_out_time = check_out_time.replace(year=datetime.now().year, month=datetime.now().month, day=datetime.now().day)
+            
+            if current_time - check_out_time >= timedelta(seconds=CHECK_IN_DELAY): # default 30 sec
+                can_check_in = True
+            break
+
     # Write the updated rows back to the CSV file
-    if checked_out:
+    if can_check_out:
         write_to_csv(rows=rows, row=None, write_header=True)
-    elif not already_checked_in:
+        print(f"{name} checked out at {current_time_str}.")
+    elif can_check_in or not has_records:
         row = {'Student ID': student_id, 'Name': name, 'Check-in Time': current_time_str, 'Check-out Time': ''}
         write_to_csv(rows=None, row=row, write_header=False)
+        print(f"{name} checked in at {current_time_str}.")
+
+
+def get_last_seen(name):
+    # Load the CSV file content into a list of dictionaries
+    with open(file_path, 'r') as csvfile:
+        reader = csv.DictReader(csvfile)
+        rows = list(reader)
+
+    last_seen_time = None
+    status = None
+
+    # Iterate over the rows in reverse order
+    for row in reversed(rows):
+        if row['Name'] != name:
+            continue
+
+        # If a check-out time is found, compare it with the last seen time
+        if row['Check-out Time']:
+            check_out_time = datetime.strptime(row['Check-out Time'], "%H:%M:%S")
+            if not last_seen_time or check_out_time > last_seen_time:
+                last_seen_time = check_out_time
+                status = "check-out"
+
+        # If a check-in time is found, compare it with the last seen time
+        if row['Check-in Time']:
+            check_in_time = datetime.strptime(row['Check-in Time'], "%H:%M:%S")
+            if not last_seen_time or check_in_time > last_seen_time:
+                last_seen_time = check_in_time
+                status = "check-in"
+
+        # If both check-in and check-out times are found, break the loop
+        if row['Check-in Time'] and row['Check-out Time']:
+            break
+
+    # Convert the last seen time to a string
+    if last_seen_time:
+        last_seen_time = last_seen_time.strftime("%H:%M:%S")
+
+    return last_seen_time, status

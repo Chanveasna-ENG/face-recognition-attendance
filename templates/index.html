@@ -29,16 +29,23 @@
                         data.forEach(face => {
                             var img = document.createElement('img');
                             var name = document.createElement('p');
-                            var timestamp = document.createElement('p');  // Add this line
+                            var timestamp = document.createElement('p');
 
                             var url = "data:image/jpeg;base64," + face.image;
                             img.src = url;
                             name.textContent = face.name;
-                            timestamp.textContent = face.timestamp;  // Add this line
+                            timestamp.textContent = face.timestamp;
+
+                            // Add a border to the image based on the status
+                            if (face.status === 'check-in') {
+                                img.style.border = '5px solid green';
+                            } else if (face.status === 'check-out') {
+                                img.style.border = '5px solid red';
+                            }
 
                             container.appendChild(img);
                             container.appendChild(name);
-                            container.appendChild(timestamp);  // Add this line
+                            container.appendChild(timestamp);
                         });
                     });
                 })

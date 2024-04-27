@@ -3,10 +3,18 @@ from flask import Flask, render_template, Response, jsonify
 import cv2
 import os
 import base64
-from datetime import datetime
 import numpy as np
 import face_recognition as face
 import PIL.Image as Image
+import Database as db
+
+
+# Constants
+GREEN = (95, 255, 95)
+RED = (95, 95, 255)
+BLUE = (255, 95, 95)
+WHITE = (255, 255, 255)
+NTH_FRAME = 50 # recognize face every nth frame
 
 
 def load_known_faces():
@@ -39,7 +47,7 @@ def recognize2(unknown_encoding):
     # Get the index of the best match
     best_match_index = np.argmin(face_distances)
     # Compare face encodings
-    results = face.compare_faces(list(known_faces.values()), unknown_encoding, tolerance=0.5)
+    results = face.compare_faces(list(known_faces.values()), unknown_encoding, tolerance=0.6)
 
     # Check if the best match is a match
     if results[best_match_index]:
@@ -48,18 +56,6 @@ def recognize2(unknown_encoding):
 
     return 'Unknown'
 
-
-# Get a reference to default webcame
-video_capture = cv2.VideoCapture(0)
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
-known_faces_dir = os.path.join(script_dir, 'known_faces')
-unknown_image_path = os.path.join(script_dir, 'static', 'Unknown.jpeg')
-blank_image_path = os.path.join(script_dir, 'static', 'blank.jpeg')
-
-known_faces = {}
-load_known_faces()
-face_names = []
 
 # Flask App
 app = Flask(__name__)
@@ -79,9 +75,9 @@ def gen():
         ret, frame = video_capture.read()
         frame = cv2.flip(frame, 1)
 
-        # Only process every 30th frame of video to save time
+        # Only process every 50th frame of video to save time
         # user must stay still for a while for it to capture
-        if frame_counter % 30 == 0:
+        if frame_counter % NTH_FRAME == 0:
             # Reset frame counter
             frame_counter = 0
             # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
@@ -101,24 +97,27 @@ def gen():
 
         # Display the results
         for (top, right, bottom, left), name in zip(face_locations, face_names):
+            db.mark_attendance(name, '00000000') # student_id is not used in this case
+            lastseen, state = db.get_last_seen(name)
             # Scale back up face locations since the frame we detected in was scaled to 1/4 size
             top *= 4
             right *= 4
             bottom *= 4
             left *= 4
 
+            color = RED if state == 'check-out' else GREEN
             # Draw a box around the face
             cv2.rectangle(img=frame, 
                         pt1=(left, top), 
                         pt2=(right, bottom), 
-                        color=(95, 95, 255), 
+                        color=color, 
                         thickness=2)
 
             # Draw a label with a name below the face
             cv2.rectangle(img=frame, 
                         pt1=(left, bottom - 35), 
                         pt2=(right, bottom), 
-                        color=(95, 95, 255), 
+                        color=color, 
                         thickness=cv2.FILLED)
 
             cv2.putText(img=frame, 
@@ -126,7 +125,7 @@ def gen():
                         org=(left + 6, bottom - 6), 
                         fontFace=cv2.FONT_HERSHEY_DUPLEX, 
                         fontScale=1.0, 
-                        color=(255, 255, 255), 
+                        color=WHITE, 
                         thickness=1)
             
         # Displaying counter
@@ -135,7 +134,7 @@ def gen():
                     org=(10, 25), 
                     fontFace=cv2.FONT_HERSHEY_DUPLEX, 
                     fontScale=0.5, 
-                    color=(255, 255, 255), 
+                    color=WHITE, 
                     thickness=1)
 
         # Convert the frame to .jpg file for streaming
@@ -177,11 +176,12 @@ def recognized_face():
 
     for name in face_names:
         image_path = unknown_image_path if name == 'Unknown' else find_img(name)
-        
+        last_seen, status = db.get_last_seen(name)
         data.append({
             'name': name, 
             'image': encode_image_base64(image_path),
-            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            'timestamp': last_seen,
+            'status': status
         })
 
     if data:
@@ -190,9 +190,25 @@ def recognized_face():
         return jsonify([{
             'name': 'Name', 
             'image': encode_image_base64(blank_image_path),
-            'timestamp': 'Timestamp'
+            'timestamp': 'Timestamp',
+            'status': 'Status'
             }])
 
 
+
+# Get a reference to default webcame
+video_capture = cv2.VideoCapture(0)
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+known_faces_dir = os.path.join(script_dir, 'known_faces')
+unknown_image_path = os.path.join(script_dir, 'static', 'Unknown.jpeg')
+blank_image_path = os.path.join(script_dir, 'static', 'blank.jpeg')
+
+db.create_or_check_attendance_file()
+
+known_faces = {}
+load_known_faces()
+face_names = []
 if __name__ == '__main__':
+
     app.run(host='0.0.0.0', debug=True)
